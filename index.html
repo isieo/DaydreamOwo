@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+    <script src="daydream.js"></script>
+    <button id="button">start</button>
+    <button id="stop">stop</button>
+
+    <script type="text/javascript">
+      var connected = true
+      const socket = new WebSocket('ws://localhost:6767');
+
+      socket.addEventListener('open', function (event) {
+          console.log('Hello Server!');
+          connected = true
+      });
+      d = new DaydreamController()
+      d.onStateChange(function(data){
+        if (connected){
+            socket.send(JSON.stringify(data).padEnd(400,' '))
+        }
+      })
+
+			button.addEventListener( 'click', function () {
+        d.connect();
+        socket.addEventListener('open', function (event) {
+            console.log('Hello Server!');
+            connected = true
+        });
+      });
+
+
+  		window.document.getElementById("stop").addEventListener( 'click', function () {
+        console.log("Disconnecting")
+        connected = false
+        d.disconnect();
+        socket.close()
+      });
+    </script>
+  </body>
+</html>
