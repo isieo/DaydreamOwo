@@ -6,38 +6,47 @@
   </head>
   <body>
     <script src="daydream.js"></script>
-    <button id="button">start</button>
-    <button id="stop">stop</button>
 
+
+    <button id="connect">Conect to Server</button>
+    <button id="start">Start DayDream</button>
+    <button id="stop">Stop Daydream and Disconnect</button>
+    <div id="status">Ready To Connect</div>
     <script type="text/javascript">
-      var connected = true
-      const socket = new WebSocket('ws://localhost:6767');
+      let socket = null;
 
-      socket.addEventListener('open', function (event) {
-          console.log('Hello Server!');
-          connected = true
+      window.document.getElementById("connect").addEventListener( 'click', function () {
+        if (socket){
+          socket.close()
+        }
+        socket = new WebSocket('ws://localhost:6767')
+        socket.addEventListener('open', function (event) {
+            window.document.getElementById("status").innerHTML ="Connected to Server"
+        });
       });
+
       d = new DaydreamController()
       d.onStateChange(function(data){
-        if (connected){
+        if (socket.readyState ===  1){
             socket.send(JSON.stringify(data).padEnd(400,' '))
         }
       })
 
-			button.addEventListener( 'click', function () {
+			window.document.getElementById("start").addEventListener( 'click', function () {
+        if (socket.readyState !== 1){
+          alert("Connect to server first")
+          return
+        }
         d.connect();
-        socket.addEventListener('open', function (event) {
-            console.log('Hello Server!');
-            connected = true
-        });
       });
 
 
   		window.document.getElementById("stop").addEventListener( 'click', function () {
         console.log("Disconnecting")
-        connected = false
-        d.disconnect();
-        socket.close()
+        if (socket && socket.readyState !== 1){
+          socket.close()
+        }
+        window.location.reload()
       });
     </script>
   </body>

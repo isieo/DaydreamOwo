@@ -30,26 +30,25 @@ next 4 bytes - gyro rate z
 64 byte packets
 */
 var packetSeq = 0n
+var handShaken = false
+var connectionCloser = 0
+var owoIsAlive = false
 const owoConn = dgram.createSocket('udp4');
+
+function closeWhenTimeout(){
+  clearTimeout(connectionCloser)
+  connectionCloser = setTimeout(()=>{
+    console.log("Connection Timed Out, Retrying with Handshake..")
+    handShaken = false
+    packetSeq = 0n
+    owoIsAlive = false
+    sendHandshake();
+  }, 10000)
+}
+
 function connectToOwo(){
-  owoConn.connect(6969, 'localhost', (err) => {
-    sendHandshake()
-    owoConn.on('message', (msg, rinfo)=>{
-      let msgType = msg.readUInt32BE(0)
-      if (msgType > 100) {
-        msgType = msg.readUInt32BE(0)
-      }
-      console.log(msgType,msg, rinfo)
-      switch (msgType){
-        case 1:
-          sendHeartBeat();
-          break
-        case 10:
-          sendPong(msg);
-          break
-      }
-    })
-  });
+  closeWhenTimeout()
+  owoConn.connect(6969, 'localhost');
 }
 
 function getPacketSequence(){
@@ -61,6 +60,8 @@ function sendHandshake(){
   const buffer = Buffer.allocUnsafe(12);
   buffer.writeUInt32BE(3,0)
   buffer.writeBigInt64BE(getPacketSequence(),4)
+  handShaken = true
+  // slime info are optional
   // buffer.writeUInt32BE(0,12)
   // buffer.writeUInt32BE(0,16)
   // buffer.writeUInt32BE(0,20)
@@ -73,7 +74,8 @@ function sendHandshake(){
   // buffer.write("\9owoTrack8\0\69\0\0\0\0",37)
   // buffer.write('\0xff',53)
   owoConn.send(buffer, (err) => {
-    console.log("Handshake")
+    console.log("Sending Handshake")
+    closeWhenTimeout()
   });
 }
 
@@ -123,7 +125,7 @@ function sendGyro(daydreamData){
     buffer.writeFloatBE(daydreamData.yGyro,16)
     buffer.writeFloatBE(daydreamData.zGyro,20)
     owoConn.send(buffer, (err) => {
-      console.log("Gyro Sent", buffer)
+      //console.log("Gyro Sent", buffer)
     });
  // }catch(e){
  //      console.log("invalid json", daydreamData)
@@ -139,6 +141,7 @@ function sendRotation(daydreamData){
     const buffer = Buffer.allocUnsafe(28);
     buffer.writeUInt32BE(1,0)
     buffer.writeBigInt64BE(getPacketSequence(),4)
+    // using Quaternion node library, maths :/
     let q = new Quaternion([daydreamData.xOri,-daydreamData.zOri,daydreamData.yOri]) // z and y is flipped for some reason
     let sqrMagnitude = q.normSq()//(state.xOri ^2) + (state.yOri ^2) + (state.zOri ^2)
     if (sqrMagnitude > 0){
@@ -162,25 +165,38 @@ function sendRotation(daydreamData){
   // }
 }
 
-var last_heart_beat = 0
-function createOwoPayload(daydreamData){
-  let data = []
-  last_heart_beat= Date.now()
-  daydreamData.length()
+owoConn.on('message', (msg, rinfo)=>{
+  let msgType = msg.readUInt32BE(0)
+  if (msgType > 100) {
+    msgType = msg.readUInt32LE(0)
+  }
+  switch (msgType){
+    case 1:
+      sendHeartBeat();
+      break
+    case 10:
+      sendPong(msg);
+      break
+  }
+  owoIsAlive = true
+  closeWhenTimeout()
+})
 
-}
 connectToOwo()
 
 // Set up a headless websocket server that prints any
 // events that come in.
 const wsServer = new ws.Server({ noServer: true });
 wsServer.on('connection', socket => {
+  console.log("Client connected, trying to connect to oWo")
   socket.on('message', message => {
     // try{
       let data = JSON.parse(message.toString('utf8').trim())
-      sendGyro(data)
-      sendAccelerometer(data)
-      sendRotation(data)
+      if (owoIsAlive){
+        sendGyro(data)
+        sendAccelerometer(data)
+        sendRotation(data)
+      }
     // }catch(e){
     //   console.log("invalid json", message.length)
     // }
