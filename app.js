@@ -1,9 +1,9 @@
 const express = require('express')
-const Quaternion = require('quaternion');
-const http = require('http');
-const ws = require('ws');
-const dgram = require('node:dgram');
-const app = express();
+const Quaternion = require('quaternion')
+const http = require('http')
+const ws = require('ws')
+const dgram = require('node:dgram')
+const app = express()
 
 
 
@@ -33,7 +33,7 @@ var packetSeq = 0n
 var handShaken = false
 var connectionCloser = 0
 var owoIsAlive = false
-const owoConn = dgram.createSocket('udp4');
+const owoConn = dgram.createSocket('udp4')
 
 function closeWhenTimeout(){
   clearTimeout(connectionCloser)
@@ -42,23 +42,23 @@ function closeWhenTimeout(){
     handShaken = false
     packetSeq = 0n
     owoIsAlive = false
-    sendHandshake();
-  }, 10000)
+    sendHandshake()
+    }, 10000)
 }
 
 function connectToOwo(){
   closeWhenTimeout()
-  owoConn.connect(6969, 'localhost');
+  owoConn.connect(6969, 'localhost')
 }
 
 function getPacketSequence(){
   packetSeq = packetSeq + 1n
-  return packetSeq++;
+  return packetSeq++
 }
 
 function sendHandshake(){
-  const buffer = Buffer.allocUnsafe(12);
-  buffer.writeUInt32BE(3,0)
+  const buffer = Buffer.allocUnsafe(12)
+    buffer.writeUInt32BE(3,0)
   buffer.writeBigInt64BE(getPacketSequence(),4)
   handShaken = true
   // slime info are optional
@@ -76,41 +76,41 @@ function sendHandshake(){
   owoConn.send(buffer, (err) => {
     console.log("Sending Handshake")
     closeWhenTimeout()
-  });
+  })
 }
 
 function sendHeartBeat(){
-  const buffer = Buffer.allocUnsafe(16);
-  buffer.writeUInt32BE(0,0)
+  const buffer = Buffer.allocUnsafe(16)
+    buffer.writeUInt32BE(0,0)
   buffer.writeBigInt64BE(getPacketSequence(),4)
   owoConn.send(buffer, (err) => {
     console.log("Heartbeat")
-  });
+  })
 }
 
 function sendPong(ping){
-  const buffer = Buffer.allocUnsafe(16);
-  buffer.writeUInt32BE(10,0)
+  const buffer = Buffer.allocUnsafe(16)
+    buffer.writeUInt32BE(10,0)
   buffer.writeBigInt64BE(getPacketSequence(),4)
-  buffer.writeInt32BE(ping.readInt32BE(12), 12);
-  owoConn.send(buffer, (err) => {
+  buffer.writeInt32BE(ping.readInt32BE(12), 12)
+    owoConn.send(buffer, (err) => {
     console.log("Heartbeat")
-  });
+  })
 }
 
 // next 4 bytes - gyro rate x
 // next 4 bytes - gyro rate y
 // next 4 bytes - gyro rate z
 function sendAccelerometer(daydreamData){
-  const buffer = Buffer.allocUnsafe(24);
-  buffer.writeUInt32BE(4,0)
+  const buffer = Buffer.allocUnsafe(24)
+    buffer.writeUInt32BE(4,0)
   buffer.writeBigInt64BE(getPacketSequence(),4)
   buffer.writeFloatBE(daydreamData.xAcc,12)
   buffer.writeFloatBE(daydreamData.yAcc,16)
   buffer.writeFloatBE(daydreamData.zAcc,20)
   owoConn.send(buffer, (err) => {
     //console.log("Acceleration Sent")
-  });
+  })
 }
 
 // next 4 bytes - gyro rate x
@@ -118,16 +118,16 @@ function sendAccelerometer(daydreamData){
 // next 4 bytes - gyro rate z
 function sendGyro(daydreamData){
   // try{
-    const buffer = Buffer.allocUnsafe(24);
-    buffer.writeUInt32BE(2,0)
+    const buffer = Buffer.allocUnsafe(24)
+        buffer.writeUInt32BE(2,0)
     buffer.writeBigInt64BE(getPacketSequence(),4)
     buffer.writeFloatBE(daydreamData.xGyro,12)
     buffer.writeFloatBE(daydreamData.yGyro,16)
     buffer.writeFloatBE(daydreamData.zGyro,20)
     owoConn.send(buffer, (err) => {
       //console.log("Gyro Sent", buffer)
-    });
- // }catch(e){
+    })
+     // }catch(e){
  //      console.log("invalid json", daydreamData)
  //    }
 }
@@ -138,8 +138,8 @@ function sendGyro(daydreamData){
 // next 4 bytes - gyro rate w
 function sendRotation(daydreamData){
   // try{
-    const buffer = Buffer.allocUnsafe(28);
-    buffer.writeUInt32BE(1,0)
+    const buffer = Buffer.allocUnsafe(28)
+        buffer.writeUInt32BE(1,0)
     buffer.writeBigInt64BE(getPacketSequence(),4)
     // using Quaternion node library, maths :/
     let q = new Quaternion([daydreamData.xOri,-daydreamData.zOri,daydreamData.yOri]) // z and y is flipped for some reason
@@ -159,8 +159,8 @@ function sendRotation(daydreamData){
     buffer.writeFloatBE(q.w,24)
     owoConn.send(buffer, (err) => {
       //console.log("Rotation Sent")
-    });
-  // }catch(e){
+    })
+      // }catch(e){
   //   console.log("invalid json", daydreamData)
   // }
 }
@@ -172,11 +172,11 @@ owoConn.on('message', (msg, rinfo)=>{
   }
   switch (msgType){
     case 1:
-      sendHeartBeat();
-      break
+      sendHeartBeat()
+            break
     case 10:
-      sendPong(msg);
-      break
+      sendPong(msg)
+            break
   }
   owoIsAlive = true
   closeWhenTimeout()
@@ -186,7 +186,7 @@ connectToOwo()
 
 // Set up a headless websocket server that prints any
 // events that come in.
-const wsServer = new ws.Server({ noServer: true });
+const wsServer = new ws.Server({ noServer: true })
 wsServer.on('connection', socket => {
   console.log("Client connected, trying to connect to oWo")
   socket.on('message', message => {
@@ -200,8 +200,8 @@ wsServer.on('connection', socket => {
     // }catch(e){
     //   console.log("invalid json", message.length)
     // }
-  });
-});
+  })
+})
 
 // `server` is a vanilla Node.js HTTP server, so use
 // the same ws upgrade process described here:
@@ -209,10 +209,10 @@ wsServer.on('connection', socket => {
 
 //start our server
 const server = app.listen(6767, () => {
-    console.log(`Server started on port ${server.address().port} :)`);
-});
-server.on('upgrade', (request, socket, head) => {
+    console.log(`Server started on port ${server.address().port} :)`)
+  })
+  server.on('upgrade', (request, socket, head) => {
   wsServer.handleUpgrade(request, socket, head, socket => {
-    wsServer.emit('connection', socket, request);
-  });
-});
+    wsServer.emit('connection', socket, request)
+    })
+  })
