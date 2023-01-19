@@ -7,19 +7,25 @@
   <body>
     <script src="daydream.js"></script>
 
-
+    <button id="useSecond">Set As Second Tracker</button>
     <button id="connect">Conect to Server</button>
     <button id="start">Start DayDream</button>
     <button id="stop">Stop Daydream and Disconnect</button>
     <div id="status">Ready To Connect</div>
+    <div id="trackertime"></div>
     <script type="text/javascript">
-      let socket = null;
+    let socket = null;
+	let useSecond = false;
 
       window.document.getElementById("connect").addEventListener( 'click', function () {
         if (socket){
           socket.close()
         }
-        socket = new WebSocket('ws://localhost:6767')
+        let addr = 'ws://localhost:6767'
+        if (useSecond){
+          addr = 'ws://localhost:6768'
+        }
+        socket = new WebSocket(addr)
         socket.addEventListener('open', function (event) {
             window.document.getElementById("status").innerHTML ="Connected to Server"
         });
@@ -27,12 +33,13 @@
 
       d = new DaydreamController()
       d.onStateChange(function(data){
+	  window.document.getElementById("trackertime").innerHTML = data.time;
         if (socket.readyState ===  1){
             socket.send(JSON.stringify(data).padEnd(400,' '))
         }
       })
 
-			window.document.getElementById("start").addEventListener( 'click', function () {
+	  window.document.getElementById("start").addEventListener( 'click', function () {
         if (socket.readyState !== 1){
           alert("Connect to server first")
           return
@@ -40,8 +47,13 @@
         d.connect();
       });
 
+	window.document.getElementById("useSecond").addEventListener( 'click', function () {
+        console.log("useSecond!")
+	  window.document.body.style="background-color: #505050"
+	  useSecond = true
+      });
 
-  		window.document.getElementById("stop").addEventListener( 'click', function () {
+	window.document.getElementById("stop").addEventListener( 'click', function () {
         console.log("Disconnecting")
         if (socket && socket.readyState !== 1){
           socket.close()

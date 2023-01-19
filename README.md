@@ -9,14 +9,20 @@ WARNING: Janky code made by piecing stuff together
  * Browser that supports bluetooth
 
 # How to use
+if you are using the released version just run start.bat
+you will need to edit start bat to provide your daydream controller id, follow the instructions in the commandline prompt
 
-If you have node.js installed, run
-```
-  node app.js
-```
-then open index.html in a browser, press connect to server, then start daydream
 
-or if you are using the release version, just double click start.bat
+if you want to run it manually:
+```
+  node.exe app.js <detected id>
+```
+
+You can find your daydream id by typing
+
+```
+  node.exe app.js scan
+```
 
 
 

@@ -57,8 +57,12 @@ typings/
 # dotenv environment variables file
 .env
 
-
 node.exe
+
+# Local test bats
+start_cont.bat
+start_cont2.bat
+start_second.bat
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -69,6 +73,8 @@ node.exe
 # nuxt.js build output
 .nuxt
 
+dist/*
+dist
 # vuepress build output
 .vuepress/dist
 
