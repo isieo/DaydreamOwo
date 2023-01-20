@@ -2,9 +2,10 @@ const noble = require('noble-winrt');
 function DaydreamControllerNode() {
 
 	var state = {};
+	var did
 
 	function connect(uid=null) {
-		
+		did=uid
 		console.log(`Searching for Daydream with id: ${uid}`)
 		noble.on('stateChange', state => {
 		  if (state === 'poweredOn') {
@@ -16,10 +17,10 @@ function DaydreamControllerNode() {
 		
 		noble.on('discover', peripheral => {
 		 console.log(peripheral.advertisement.localName)
-		 console.log(peripheral.id, uid, peripheral.advertisement.localName === 'Daydream controller' && peripheral.id === uid)
-		  if (peripheral.advertisement.localName === 'Daydream controller' && peripheral.id === uid) {
+		 console.log(peripheral.id, did, peripheral.advertisement.localName === 'Daydream controller' && peripheral.id === did)
+		  if (peripheral.advertisement.localName === 'Daydream controller' && peripheral.id === did) {
 			noble.stopScanning();
-			console.log(`Connected to ${uid}`)
+			console.log(`Connected to ${did}`)
 			connectToDevice(peripheral)
 		  }
 		});
@@ -57,7 +58,7 @@ function DaydreamControllerNode() {
 		peripheral.on('disconnect', function() {
 			console.log('Daydream controller disconnected. Attempting to reconnect...');
 			setTimeout(() => {
-				connect();
+				connect(did);
 			}, 5000);
 		});
 	}
