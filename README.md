@@ -1,12 +1,11 @@
 # DaydreamOwo
- Use Daydream controller as OwoTrack
+ Use Daydream controller(s) with OwoTrack/SlimeVr
 
 WARNING: Janky code made by piecing stuff together
 
 # Requirements
  * Daydream controller (the daydream.js claims that the latest firmware doesn't allow connecting via browser, i don't have the new firmware, so i don't know)
- * OwoTrack overlay (not tested with slime server)
- * Browser that supports bluetooth
+ * SlimeVr Server V0.7.1 (new ones doen't work? not sure why)
 
 # How to use
 if you are using the released version just run start.bat

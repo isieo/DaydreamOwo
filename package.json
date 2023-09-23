@@ -8,7 +8,9 @@
   "author": "isieo",
   "license": "ISC",
   "dependencies": {
+    "angle-between-landmarks": "^1.1.4",
     "crypto-js": "^4.1.1",
+    "express": "^4.18.2",
     "noble": "^1.9.1",
     "noble-uwp": "^0.6.2",
     "noble-winrt": "^0.1.1",

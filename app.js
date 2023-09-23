@@ -134,7 +134,25 @@ function sendHandshake(){
 	})
 }
 
+
+
 function sendSensorInfo(){
+  const buffer = Buffer.allocUnsafe(4 + 8 + 1 + 1 + 1)
+    buffer.writeUInt32BE(15,0)
+	buffer.writeBigInt64BE(getPacketSequence(),4)
+	
+    buffer.writeUInt8(trackerId,12)
+    buffer.writeUInt8(1,13)
+    buffer.writeUInt8(0,14)
+  owoConn.send(buffer, (err) => {
+    console.log(`Sent Sensor Info ${trackerId}`)
+	sendHeartBeat()
+	
+  owoIsAlive = true
+  })
+}
+
+function sendxSensorInfo(){
   const buffer = Buffer.allocUnsafe(16)
     buffer.writeUInt32BE(15,0)
     buffer.writeUInt32BE(trackerId,4)
@@ -197,13 +215,54 @@ function sendGyro(daydreamData){
  //    }
 }
 
+
 // next 4 bytes - gyro rate x
 // next 4 bytes - gyro rate y
 // next 4 bytes - gyro rate z
 // next 4 bytes - gyro rate w
 function sendRotation(daydreamData){
   // try{
-    const buffer = Buffer.allocUnsafe(28)
+    const buffer = Buffer.allocUnsafe(4 + 8 + 1 + 1 + 4 + 4 + 4 + 4 + 1);
+    buffer.writeUInt32BE(17,0) //type
+    buffer.writeBigInt64BE(getPacketSequence(),4) //seq
+	
+    buffer.writeUintBE(trackerId, 12, 1) // trackerid
+	buffer.writeUintBE(1, 13, 1); // datattype
+
+    // using Quaternion node library, maths :/
+    let q = new Quaternion([daydreamData.xOri,-daydreamData.zOri,daydreamData.yOri]) // z and y is flipped for some reason
+    let sqrMagnitude = q.normSq()//(state.xOri ^2) + (state.yOri ^2) + (state.zOri ^2)
+    if (sqrMagnitude > 0){
+      let angle = Math.sqrt(sqrMagnitude)
+      q = q.scale(angle)
+      q = Quaternion.fromAxisAngle([q.x,q.y,q.z],angle)
+      // q.w = sqrMagnitude
+    } else {
+			q = new Quaternion(0,[0,0,0])
+	}
+	
+    buffer.writeFloatBE(q.x,14)
+    buffer.writeFloatBE(q.y,18)
+    buffer.writeFloatBE(q.z,22)
+    buffer.writeFloatBE(q.w,26)
+    
+    buffer.writeUintBE(255, 30, 1);
+
+    owoConn.send(buffer, (err) => {
+      //console.log(`Tracker ${trackerId}:Rotation Sent`)
+    })
+      // }catch(e){
+  //   console.log("invalid json", daydreamData)
+  // }
+}
+
+// next 4 bytes - gyro rate x
+// next 4 bytes - gyro rate y
+// next 4 bytes - gyro rate z
+// next 4 bytes - gyro rate w
+function sendxRotation(daydreamData){
+  // try{
+    const buffer = Buffer.allocUnsafe(29)
     buffer.writeUInt32BE(1,0)
     buffer.writeBigInt64BE(getPacketSequence(),4)
     // using Quaternion node library, maths :/
@@ -222,6 +281,8 @@ function sendRotation(daydreamData){
     buffer.writeFloatBE(q.y,16)
     buffer.writeFloatBE(q.z,20)
     buffer.writeFloatBE(q.w,24)
+	
+    buffer.writeUintBE(trackerId, 12, 1) // trackerid
     owoConn.send(buffer, (err) => {
       //console.log("Rotation Sent")
     })
@@ -252,8 +313,8 @@ owoConn.on('message', (msg, rinfo)=>{
 daydream = new DaydreamControllerNode()
 daydream.onStateChange(function(data){
   if (owoIsAlive){
-	sendGyro(data)
-	sendAccelerometer(data)
+	//sendGyro(data)
+	//sendAccelerometer(data)
 	sendRotation(data)
   }
 })
